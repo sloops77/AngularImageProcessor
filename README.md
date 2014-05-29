@@ -19,10 +19,10 @@ imageProcessor.run(url, options, function(resizedImage) {
 
 Creates
 
-'''
+```
 {
   dataURL: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD…x5C/ypM5B+VeOtFFa3MSe2mkjBMbtGf8AZNFFFaRbsZySuf/Z", 
   type: "image/jpeg", 
   ext: "jpg"
 }
-'''
+```
