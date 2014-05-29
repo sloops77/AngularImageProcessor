@@ -3,9 +3,8 @@ AngularImageProcessor
 
 Point and Shoot image processing for angular - desktop and mobile.
 
-Resizes, auto rotates, and auto crops using canvas.
-
-Currently tested on chrome, safari & ios
+* Resizes, auto rotates, and auto crops using canvas.
+* Currently tested on chrome, safari & ios
 
 ## Getting started
 
