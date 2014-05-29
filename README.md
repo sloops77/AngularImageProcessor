@@ -3,7 +3,7 @@ AngularImageProcessor
 
 Point and Shoot image processing for angular: 
 
-Resized, auto rotates, and auto crops using canvas.
+Resizes, auto rotates, and auto crops using canvas.
 
 ```
 options = {
