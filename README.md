@@ -1,19 +1,38 @@
 AngularImageProcessor
 =====================
 
-Point and Shoot image processing for angular: 
+Point and Shoot image processing for angular - desktop and mobile.
 
 Resizes, auto rotates, and auto crops using canvas.
 
-```
-options = {
-  resizeMaxHeight: 150,
-  resizeMaxWidth: 150,
-  resizeQuality: 0.7
-};
+Currently tested on chrome, safari & ios
 
-imageProcessor.run(url, options, function(processedImage) {
-  console.log(processedImage);
+## Getting started
+
+Include the module
+```
+angular.module('myApp', ['tbImageProcessor'])
+```
+
+Then in a controller or directive
+
+```
+angular.module('myApp').directive('filechooser', function(imageProcessor) {
+
+  var processFile = function(file) {
+    var options = {
+      resizeMaxHeight: 150,
+      resizeMaxWidth: 150,
+      resizeQuality: 0.7
+    };
+    
+    var url = URL.createObjectURL(file)
+    
+    imageProcessor.run(url, options, function(processedImage) {
+      console.log(processedImage);
+    });
+  };
+  
 });
 ```
 
