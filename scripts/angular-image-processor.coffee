@@ -1,11 +1,11 @@
-angular.module('angular-image-processor').service('imageProcessor', ($q, logger) ->
+angular.module('tbImageProcessor').service('imageProcessor', ($q) ->
   {
     startTime: 0
     lastTime: 0
 
     logTime: (methName) ->
       @lastTime = Date.now()
-      logger.debug(@lastTime + ": " + methName + " (" + (@lastTime - @startTime) + ")")
+#      logger.debug(@lastTime + ": " + methName + " (" + (@lastTime - @startTime) + ")")
 
     ###
     Transform canvas coordination according to specified frame size and orientation
@@ -147,7 +147,7 @@ angular.module('angular-image-processor').service('imageProcessor', ($q, logger)
 
       EXIF.getData(origImage, =>
         orientation = EXIF.getTag(this, "Orientation")
-        logger.debug "orientation=#{orientation}"
+#        logger.debug "orientation=#{orientation}"
 
         #draw image on canvas
         ctx = canvas.getContext("2d")
