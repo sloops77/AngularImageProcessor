@@ -1,4 +1,4 @@
-angular.module('tbImageProcessor').service('imageProcessor', ($q) ->
+angular.module('tbImageProcessor', []).service('imageProcessor', ($q) ->
   {
     startTime: 0
     lastTime: 0
@@ -147,7 +147,7 @@ angular.module('tbImageProcessor').service('imageProcessor', ($q) ->
 
       EXIF.getData(origImage, =>
         orientation = EXIF.getTag(this, "Orientation")
-#        logger.debug "orientation=#{orientation}"
+        logger.debug "orientation=#{orientation}"
 
         #draw image on canvas
         ctx = canvas.getContext("2d")
