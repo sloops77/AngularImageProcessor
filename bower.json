@@ -1,0 +1,29 @@
+{
+  "name": "angular-image-processor",
+  "version": "0.0.1",
+  "main": "./angular-image-processor.js",
+  "dependencies": {
+    "angular": "^1.2.16",
+    "exif": "https://github.com/jseidelin/exif-js/archive/master.zip"
+  },
+  "authors": [
+    "Andres Olave <andres.olave@thinkingbytes.net>"
+  ],
+  "description": "Simple Image Processing on the Client for angular",
+  "keywords": [
+    "angular",
+    "image",
+    "process",
+    "scale",
+    "jpg",
+    "crop"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
