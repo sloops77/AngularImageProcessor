@@ -17,7 +17,7 @@ imageProcessor.run(url, options, function(resizedImage) {
 });
 ```
 
-Creates
+Creates **resizedImage
 
 ```
 {
