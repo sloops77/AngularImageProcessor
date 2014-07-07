@@ -111,16 +111,13 @@
         }
         return resizeArea;
       },
-      resizeImage: function(origImage, options) {
-        var canvas, deferred, maxHeight, maxWidth, origHeight, origWidth, quality, sourceHeight, sourceWidth, sourceX, sourceY, type;
+      resizeImage: function(origImage, config) {
+        var canvas, deferred, origHeight, origWidth, sourceHeight, sourceWidth, sourceX, sourceY, type;
         deferred = $q.defer();
-        maxHeight = options.resizeMaxHeight || 300;
-        maxWidth = options.resizeMaxWidth || 250;
-        quality = options.resizeQuality || 0.7;
         type = 'image/jpeg';
         canvas = this.getResizeArea();
-        canvas.width = maxWidth;
-        canvas.height = maxHeight;
+        canvas.width = config.maxWidth;
+        canvas.height = config.maxHeight;
         origWidth = origImage.width;
         origHeight = origImage.height;
         sourceWidth = void 0;
@@ -144,11 +141,11 @@
             orientation = EXIF.getTag(_this, "Orientation");
             ctx = canvas.getContext("2d");
             _this.logTime("transformCoordinate");
-            _this.transformCoordinate(canvas, maxWidth, maxHeight, orientation);
+            _this.transformCoordinate(canvas, config.maxWidth, config.maxHeight, orientation);
             _this.logTime("drawImageIOSFix");
-            _this.drawImageIOSFix(ctx, origImage, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, maxWidth, maxHeight);
+            _this.drawImageIOSFix(ctx, origImage, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, config.maxWidth, config.maxHeight);
             _this.logTime("drawImageIOSFixComplete");
-            dataURL = canvas.toDataURL(type, quality);
+            dataURL = canvas.toDataURL(type, config.quality);
             _this.logTime("dataURLGenerated");
             deferred.resolve(dataURL);
           };
@@ -167,18 +164,26 @@
       doResizing: function(url, options, callback) {
         return this.createImage(url, (function(_this) {
           return function(image) {
+            var config, _ref, _ref1, _ref2;
             _this.logTime("preResizeImage");
-            return _this.resizeImage(image, options).then(function(dataURL) {
-              var fromIdx, mimeType, rawExt, resizedImage, toIdx;
+            config = {
+              maxHeight: (_ref = options.resizeMaxHeight) != null ? _ref : 300,
+              maxWidth: (_ref1 = options.resizeMaxWidth) != null ? _ref1 : 250,
+              quality: (_ref2 = options.resizeQuality) != null ? _ref2 : 0.7
+            };
+            return _this.resizeImage(image, config).then(function(dataURL) {
+              var aspect, fromIdx, mimeType, rawExt, resizedImage, toIdx;
               _this.logTime("postResizeImage");
               fromIdx = dataURL.indexOf(':');
               toIdx = dataURL.indexOf(';', fromIdx);
               mimeType = dataURL.substring(fromIdx + 1, toIdx);
               rawExt = mimeType.split('/').pop();
+              aspect = config.maxHeight === config.maxWidth ? 'square' : config.maxHeight > config.maxWidth ? 'portrait' : 'landscape';
               resizedImage = {
                 dataURL: dataURL,
                 type: mimeType,
-                ext: rawExt === 'jpeg' ? 'jpg' : 'png'
+                ext: rawExt === 'jpeg' ? 'jpg' : 'png',
+                aspect: aspect
               };
               _this.logTime("callback");
               return callback(resizedImage);
