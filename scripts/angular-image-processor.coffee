@@ -1,9 +1,9 @@
-angular.module('tbImageProcessor', []).service('imageProcessor', ($q) ->
+angular.module('tbImageProcessor', []).service('imageProcessor', ($q, $rootScope) ->
   {
   startTime: 0
   lastTime: 0
 
-  logTime: (methName) ->
+  _logTime: (methName) ->
     @lastTime = Date.now()
 #    console.log(@lastTime + ": " + methName + " (" + (@lastTime - @startTime) + ")")
 
@@ -11,7 +11,7 @@ angular.module('tbImageProcessor', []).service('imageProcessor', ($q) ->
   Transform canvas coordination according to specified frame size and orientation
   Orientation value is from EXIF tag
   ###
-  transformCoordinate: (canvas, width, height, orientation) ->
+  _transformCoordinate: (canvas, width, height, orientation) ->
     switch orientation
       when 5, 6, 7, 8
         canvas.width = height
@@ -61,7 +61,7 @@ angular.module('tbImageProcessor', []).service('imageProcessor', ($q) ->
   This is a bug in iOS6 devices. This function from https://github.com/stomita/ios-imagefile-megapixel
   ###
 
-  detectVerticalSquash: (img) ->
+  _detectVerticalSquash: (img) ->
     iw = img.naturalWidth
     ih = img.naturalHeight
     canvas = document.createElement("canvas")
@@ -89,10 +89,10 @@ angular.module('tbImageProcessor', []).service('imageProcessor', ($q) ->
   A replacement for context.drawImage
   (args are for source and destination).
   ###
-  drawImageIOSFix: (ctx, img, sx, sy, sw, sh, dx, dy, dw, dh) ->
-    @logTime "detectVerticalSquash"
-    vertSquashRatio = @detectVerticalSquash(img)
-    @logTime "drawImage"
+  _drawImageIOSFix: (ctx, img, sx, sy, sw, sh, dx, dy, dw, dh) ->
+    @_logTime "detectVerticalSquash"
+    vertSquashRatio = @_detectVerticalSquash(img)
+    @_logTime "drawImage"
 
     # Works only if whole image is displayed:
     # ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh / vertSquashRatio);
@@ -100,7 +100,7 @@ angular.module('tbImageProcessor', []).service('imageProcessor', ($q) ->
     ctx.drawImage(img, sx * vertSquashRatio, sy * vertSquashRatio, sw * vertSquashRatio, sh * vertSquashRatio, dx, dy, dw, dh)
     return
 
-  getResizeArea: ->
+  _getResizeArea: ->
     resizeAreaId = "fileupload-resize-area"
     resizeArea = document.getElementById(resizeAreaId)
     unless resizeArea
@@ -110,29 +110,41 @@ angular.module('tbImageProcessor', []).service('imageProcessor', ($q) ->
       document.body.appendChild(resizeArea)
     resizeArea
 
-  resizeImage: (origImage, config) ->
+  #auto crops on height or width depending on the change in aspect ratio
+  _scaleImage: (origImage, config) -> #fLetterBox
+    sourceDims = {
+      width              : 0
+      height             : 0
+      left               : 0
+      top                : 0
+      fScaleToTargetWidth : true
+    }
+
+    targetAR = config.width / config.height
+    origAR = origImage.width / origImage.height
+
+    # figure out which dimension we take in full
+    sourceDims.fScaleOnWidth = (targetAR > origAR)
+
+    if sourceDims.fScaleOnWidth
+      sourceDims.width = origImage.width
+      sourceDims.height = Math.floor(1 / targetAR * origImage.width)
+    else
+      sourceDims.width = Math.floor(targetAR * origImage.height)
+      sourceDims.height = origImage.height
+
+    sourceDims.left = Math.floor((origImage.width - sourceDims.width) / 2)
+    sourceDims.top = Math.floor((origImage.height - sourceDims.height) / 2)
+    sourceDims
+
+  _doResizeImage: (origImage, config) ->
     deferred = $q.defer()
     type = 'image/jpeg' #config.resizeType or
-    canvas = @getResizeArea()
-    canvas.width = config.maxWidth
-    canvas.height = config.maxHeight
-    origWidth = origImage.width
-    origHeight = origImage.height
-    sourceWidth = undefined
-    sourceHeight = undefined
-    sourceX = undefined
-    sourceY = undefined
+    canvas = @_getResizeArea()
+    canvas.width = config.width
+    canvas.height = config.height
 
-    if origWidth < origHeight
-      sourceWidth = origWidth
-      sourceX = 0
-      sourceHeight = origWidth
-      sourceY = (origHeight - origWidth) / 2
-    else
-      sourceWidth = origHeight
-      sourceX = (origWidth - origHeight) / 2
-      sourceHeight = origHeight
-      sourceY = 0
+    sourceDims = @_scaleImage(origImage, config)
 
     EXIF.getData(origImage, =>
       orientation = EXIF.getTag(this, "Orientation")
@@ -140,13 +152,13 @@ angular.module('tbImageProcessor', []).service('imageProcessor', ($q) ->
 
       #draw image on canvas
       ctx = canvas.getContext("2d")
-      @logTime "transformCoordinate"
-      @transformCoordinate(canvas, config.maxWidth, config.maxHeight, orientation)
-      @logTime "drawImageIOSFix"
-      @drawImageIOSFix(ctx, origImage, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, config.maxWidth, config.maxHeight)
-      @logTime "drawImageIOSFixComplete"
+      @_logTime "transformCoordinate"
+      @_transformCoordinate(canvas, config.width, config.height, orientation)
+      @_logTime "drawImageIOSFix"
+      @_drawImageIOSFix(ctx, origImage, sourceDims.left, sourceDims.top, sourceDims.width, sourceDims.height, 0, 0, config.width, config.height)
+      @_logTime "drawImageIOSFixComplete"
       dataURL = canvas.toDataURL(type, config.quality)
-      @logTime "dataURLGenerated"
+      @_logTime "dataURLGenerated"
 
       # get the data from canvas as 70% jpg (or specified type).
       deferred.resolve(dataURL)
@@ -156,62 +168,104 @@ angular.module('tbImageProcessor', []).service('imageProcessor', ($q) ->
     deferred.promise
 
 
-  createImage: (url, callback) ->
-    @logTime("createImage")
+  _createImage: (url, callback) ->
+    @_logTime("_createImage")
     image = new Image()
     image.onload = -> callback(image)
     image.src = url
 
-  doResizing: (url, options, callback) ->
-    @createImage(url, (image) =>
-      @logTime("preResizeImage")
 
-      config = {
-        maxHeight: options.resizeMaxHeight ? 300
-        maxWidth: options.resizeMaxWidth ? 250
-        quality: options.resizeQuality ? 0.7
-      }
+  _parseVersions: (image, options) ->
 
-      @resizeImage(image, config).then((dataURL) =>
-        @logTime("postResizeImage")
+    versions = [{
+      width: options.width ? 150
+      height: options.height ? 150
+    }]
 
-        fromIdx = dataURL.indexOf(':')
-        toIdx = dataURL.indexOf(';', fromIdx)
+    #find closest aspect ratio for the image
+    unless _.isEmpty(options.aspectRatios)
+      arOptions = _(options.aspectRatios
+      ).map((ratio) ->
+        ratio.split(':')
+      ).map((ratio) ->
+        w = parseInt(ratio[0])
+        h = parseInt(ratio[1])
+        w/h
+      ).value()
 
-        mimeType = dataURL.substring(fromIdx + 1, toIdx)
-        rawExt = mimeType.split('/').pop()
-        aspect =
-          if config.maxHeight == config.maxWidth
-            'square'
-          else if config.maxHeight > config.maxWidth
-            'portrait'
+      origAR = image.width / image.height
+
+      chosenAR = _.reduce(
+        _.tail(arOptions),
+        (closest, option) ->
+          if Math.abs(option - origAR) < Math.abs(closest - origAR)
+            option
           else
-            'landscape'
-
-        resizedImage = {
-          dataURL: dataURL
-          type: mimeType
-          ext: if rawExt == 'jpeg' then 'jpg' else 'png'
-          aspect: aspect
-        }
-
-        @logTime("callback")
-        callback(resizedImage)
+            closest
+        _.head(arOptions)
       )
+
+      versions = _.map(options.maxWidths, (maxWidth) ->
+        if chosenAR > 1
+          {
+            maxWidth: maxWidth
+            width: maxWidth
+            height: 1/chosenAR * maxWidth
+          }
+        else
+          {
+            maxWidth: maxWidth
+            width : chosenAR * maxWidth
+            height: maxWidth
+          }
+      )
+
+    versions
+
+  createImageAndConfig: (url, options, callback) ->
+    @_createImage(url, (image) =>
+      @_logTime("parseVersions")
+      versions = @_parseVersions(image, options)
+      _.each(versions, (version) ->
+        callback(image, _.extend(version, {quality: options.quality ? 0.7}))
+      )
+    )
+
+  processImage: (image, config, onVersionStart, onVersionComplete) ->
+    $rootScope.$apply -> onVersionStart(config.maxWidth, config)
+
+    @_doResizeImage(image, config).then((dataURL) =>
+      @_logTime("postResizeImage")
+
+      fromIdx = dataURL.indexOf(':')
+      toIdx = dataURL.indexOf(';', fromIdx)
+
+      mimeType = dataURL.substring(fromIdx + 1, toIdx)
+      rawExt = mimeType.split('/').pop()
+
+      resizedImage = _.extend(config, {
+        dataURL: dataURL
+        type: mimeType
+        ext: if rawExt == 'jpeg' then 'jpg' else 'png'
+      })
+
+      @_logTime("callback")
+      onVersionComplete(config.maxWidth, resizedImage)
     )
 
   ###
     URL to use in an image element
     options: {
-        resizeMaxHeight or 300
-        resizeMaxWidth or 250
-        resizeQuality or 0.7
-        resizeType: currently ignored and hard coded to jpg
+        height or 300
+        width or 250
+        quality or 0.7
     }
     callback -> callback that is sent the resized dataURL and mime type
   ###
-  run: (url, options, callback) ->
+  run: (url, options, onVersionStart, onVersionComplete) ->
     @startTime = Date.now()
-    @doResizing(url, options, callback)
+    @createImageAndConfig(url, options, (image, config) =>
+      @processImage(image, config, onVersionStart, onVersionComplete)
+    )
   }
 )
