@@ -5,12 +5,13 @@
       startTime: 0,
       lastTime: 0,
       _logTime: function(methName) {
-        return this.lastTime = Date.now();
+        this.lastTime = Date.now();
+        return console.log(this.lastTime + ": " + methName + " (" + (this.lastTime - this.startTime) + ")");
       },
 
       /*
-      Transform canvas coordination according to specified frame size and orientation
-      Orientation value is from EXIF tag
+       Transform canvas coordination according to specified frame size and orientation
+       Orientation value is from EXIF tag
        */
       _transformCoordinate: function(canvas, width, height, orientation) {
         var ctx;
@@ -54,9 +55,9 @@
       },
 
       /*
-      Detecting vertical squash in loaded image.
-      Fixes a bug which squash image vertically while drawing into canvas for some images.
-      This is a bug in iOS6 devices. This function from https://github.com/stomita/ios-imagefile-megapixel
+       Detecting vertical squash in loaded image.
+       Fixes a bug which squash image vertically while drawing into canvas for some images.
+       This is a bug in iOS6 devices. This function from https://github.com/stomita/ios-imagefile-megapixel
        */
       _detectVerticalSquash: function(img) {
         var alpha, canvas, ctx, data, ey, ih, iw, py, ratio, sy;
@@ -89,8 +90,8 @@
       },
 
       /*
-      A replacement for context.drawImage
-      (args are for source and destination).
+       A replacement for context.drawImage
+       (args are for source and destination).
        */
       _drawImageIOSFix: function(ctx, img, sx, sy, sw, sh, dx, dy, dw, dh) {
         var vertSquashRatio;
@@ -250,13 +251,13 @@
       },
 
       /*
-        URL to use in an image element
-        options: {
-            height or 300
-            width or 250
-            quality or 0.7
-        }
-        callback -> callback that is sent the resized dataURL and mime type
+       URL to use in an image element
+       options: {
+       height or 300
+       width or 250
+       quality or 0.7
+       }
+       callback -> callback that is sent the resized dataURL and mime type
        */
       run: function(url, options, onVersionStart, onVersionComplete) {
         this.startTime = Date.now();
