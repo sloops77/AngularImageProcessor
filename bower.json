@@ -4,7 +4,7 @@
   "main": "./angular-image-processor.js",
   "dependencies": {
     "angular": "^1.2.16",
-    "exif": "https://github.com/jseidelin/exif-js/archive/master.zip"
+    "exif-js": "~2.1.0"
   },
   "authors": [
     "Andres Olave <andres.olave@thinkingbytes.net>"
