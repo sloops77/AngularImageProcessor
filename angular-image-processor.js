@@ -120,12 +120,13 @@
         };
         targetAR = config.width / config.height;
         origAR = config.orientation >= 5 ? origImage.height / origImage.width : origImage.width / origImage.height;
+        this._logTime("AR: target=" + targetAR + " origAR=" + origAR + " origWidth=" + origImage.width + " origHeight=" + origImage.height);
         sourceDims.fScaleOnWidth = targetAR > origAR;
         if (sourceDims.fScaleOnWidth) {
           sourceDims.width = origImage.width;
-          sourceDims.height = Math.floor(config.orientation < 5 ? 1 / targetAR * origImage.width : targetAR * origImage.width);
+          sourceDims.height = Math.floor(config.orientation >= 5 ? targetAR * origImage.width : 1 / targetAR * origImage.width);
         } else {
-          sourceDims.width = Math.floor(config.orientation < 5 ? targetAR * origImage.height : 1 / targetAR * origImage.height);
+          sourceDims.width = Math.floor(config.orientation >= 5 ? 1 / targetAR * origImage.height : targetAR * origImage.height);
           sourceDims.height = origImage.height;
         }
         sourceDims.left = Math.floor((origImage.width - sourceDims.width) / 2);
@@ -207,11 +208,11 @@
         };
         return this._createImage(url, (function(_this) {
           return function(image) {
-            _this._logTime("getOrientation");
+            _this._logTime("getEXIF");
             return EXIF.getData(image, function() {
               var orientation, versions;
               orientation = EXIF.getTag(this, "Orientation");
-              console.debug("orientation=" + orientation);
+              me._logTime("orientation=" + orientation);
               versions = parseVersions(image, options, orientation);
               return _.each(versions, function(version) {
                 var ref;
@@ -228,7 +229,7 @@
         var dataURL, fromIdx, mimeType, rawExt, resizedImage, toIdx;
         onVersionStart(config.maxWidth, config);
         dataURL = this._doResizeImage(image, config);
-        this._logTime("postResizeImage");
+        this._logTime("afterResizeImage");
         fromIdx = dataURL.indexOf(':');
         toIdx = dataURL.indexOf(';', fromIdx);
         mimeType = dataURL.substring(fromIdx + 1, toIdx);
@@ -238,7 +239,7 @@
           type: mimeType,
           ext: rawExt === 'jpeg' ? 'jpg' : 'png'
         });
-        this._logTime("callback");
+        this._logTime("onVersionComplete");
         return onVersionComplete(config.maxWidth, resizedImage);
       },
 
